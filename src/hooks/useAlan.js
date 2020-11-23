@@ -99,11 +99,13 @@
 //   }
 // }
 
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import alanBtn from "@alan-ai/alan-sdk-web"
 import { useCart } from "../context/CartContext"
 import storeItems from "../items.json"
 import { deepStrictEqual } from "assert"
+
+let alanBtnInstance;
 
 const COMMANDS = {
   OPEN_CART: "open-cart",
@@ -123,21 +125,21 @@ export default function useAlan() {
     checkout
   } = useCart()
 
-  function openCart(alan) {
-    if (isCartEmpty) {
-      alan.playText("Your cart is empty")
+  function openCart(isEmpty) {
+    if (isEmpty) {
+      alanBtnInstance.playText("Your cart is empty")
     } else {
       setShowCartItems(true)
-      alan.playText("Opening Cart")
+      alanBtnInstance.playText("Opening Cart")
     }
   }
 
-  function closeCart(alan) {
-    if (isCartEmpty) {
-      alan.playText("Your cart is empty")
+  function closeCart(isEmpty) {
+    if (isEmpty) {
+      alanBtnInstance.playText("Your cart is empty")
     } else {
       setShowCartItems(false)
-      alan.playText("Closing Cart")
+      alanBtnInstance.playText("Closing Cart")
     }
   }
 
@@ -174,31 +176,30 @@ export default function useAlan() {
     }
   }
 
-  // deepStrictEqual
-  //
-  //
+
+  const openCartCb = useCallback(event => {
+    openCart(isCartEmpty);
+  }, [isCartEmpty, openCart]);
+
+  const closeCartCb = useCallback(event => {
+    closeCart(isCartEmpty);
+  }, [isCartEmpty, closeCart]);
 
   useEffect(() => {
-    const alan = alanBtn({
+    window.addEventListener(COMMANDS.OPEN_CART, openCartCb);
+    window.addEventListener(COMMANDS.CLOSE_CART, closeCartCb);
+    return () => {
+      window.removeEventListener(COMMANDS.OPEN_CART, openCartCb);
+      window.removeEventListener(COMMANDS.CLOSE_CART, closeCartCb);
+    };
+  }, [openCartCb]);
+
+
+  useEffect(() => {
+    alanBtnInstance = alanBtn({
       key: process.env.REACT_APP_ALAN_KEY,
       onCommand: ({ command, payload }) => {
-        switch (command) {
-          case COMMANDS.OPEN_CART:
-            openCart(alan)
-            break
-          case COMMANDS.CLOSE_CART:
-            closeCart(alan)
-            break
-          case COMMANDS.ADD_ITEM:
-            addItem(alan, payload)
-            break
-          case COMMANDS.REMOVE_ITEM:
-            removeItem(alan, payload)
-            break
-          case COMMANDS.PURCHASE_ITEMS:
-            purchaseItems(alan)
-            break
-        }
+        window.dispatchEvent(new CustomEvent(command));
       }
     })
   }, [])
