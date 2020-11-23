@@ -99,13 +99,11 @@
 //   }
 // }
 
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import alanBtn from "@alan-ai/alan-sdk-web"
 import { useCart } from "../context/CartContext"
 import storeItems from "../items.json"
-import { deepStrictEqual } from "assert"
 
-let alanBtnInstance;
 
 const COMMANDS = {
   OPEN_CART: "open-cart",
@@ -125,21 +123,23 @@ export default function useAlan() {
     checkout
   } = useCart()
 
+  const alanBtnInstance = useRef(null)
+
   const openCart = useCallback((isEmpty) => {
     if (isEmpty) {
-      alanBtnInstance.playText("Your cart is empty")
+      alanBtnInstance.current.playText("Your cart is empty")
     } else {
       setShowCartItems(true)
-      alanBtnInstance.playText("Opening Cart")
+      alanBtnInstance.current.playText("Opening Cart 1")
     }
   }, [setShowCartItems]);
 
   const closeCart = useCallback((isEmpty) => {
     if (isEmpty) {
-      alanBtnInstance.playText("Your cart is empty")
+      alanBtnInstance.current.playText("Your cart is empty")
     } else {
       setShowCartItems(false)
-      alanBtnInstance.playText("Closing Cart")
+      alanBtnInstance.current.playText("Closing Cart")
     }
   }, [setShowCartItems]);
 
@@ -194,13 +194,14 @@ export default function useAlan() {
     };
   }, [openCartCb, closeCartCb]);
 
-
   useEffect(() => {
-    alanBtnInstance = alanBtn({
-      key: process.env.REACT_APP_ALAN_KEY,
-      onCommand: ({ command, payload }) => {
-        window.dispatchEvent(new CustomEvent(command));
-      }
-    })
+    if (!alanBtnInstance.current) {
+      alanBtnInstance.current = alanBtn({
+        key: process.env.REACT_APP_ALAN_KEY,
+        onCommand: ({ command, payload }) => {
+          window.dispatchEvent(new CustomEvent(command));
+        }
+      })
+    }
   }, [])
 }
