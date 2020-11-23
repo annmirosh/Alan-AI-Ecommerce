@@ -125,23 +125,23 @@ export default function useAlan() {
     checkout
   } = useCart()
 
-  function openCart(isEmpty) {
+  const openCart = useCallback((isEmpty) => {
     if (isEmpty) {
       alanBtnInstance.playText("Your cart is empty")
     } else {
       setShowCartItems(true)
       alanBtnInstance.playText("Opening Cart")
     }
-  }
+  }, [setShowCartItems]);
 
-  function closeCart(isEmpty) {
+  const closeCart = useCallback((isEmpty) => {
     if (isEmpty) {
       alanBtnInstance.playText("Your cart is empty")
     } else {
       setShowCartItems(false)
       alanBtnInstance.playText("Closing Cart")
     }
-  }
+  }, [setShowCartItems]);
 
   function addItem(alan, { name, quantity }) {
     const item = storeItems.find(
@@ -192,7 +192,7 @@ export default function useAlan() {
       window.removeEventListener(COMMANDS.OPEN_CART, openCartCb);
       window.removeEventListener(COMMANDS.CLOSE_CART, closeCartCb);
     };
-  }, [openCartCb]);
+  }, [openCartCb, closeCartCb]);
 
 
   useEffect(() => {
